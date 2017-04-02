@@ -64,7 +64,7 @@
         var bottomRight = group.get('.bottomRight')[0];
         var bottomLeft = group.get('.bottomLeft')[0];
         var center = group.get('.center')[0];
-        var image = group.get('Image')[0];
+        var image = group.get('Image')[0] || group.get('Text')[0];
 
         var anchorX = activeAnchor.getX();
         var anchorY = activeAnchor.getY();
@@ -296,6 +296,15 @@
                 layer.draw();
             };
             imageObj1.src = path;
+        });
+
+        $('#add_new_text').click(function() {
+            var text = $('#image_path_or_text').val();
+            console.log(text);
+            var textObj = new Konva.Text({
+                text: text
+            });
+            newGroup(textObj, layer);
         });
     });
 </script>
