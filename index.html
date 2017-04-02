@@ -1,26 +1,56 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <script src="https://cdn.rawgit.com/konvajs/konva/1.5.0/konva.min.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
     <meta charset="utf-8">
-    <title>Konva Image Resize Demo</title>
+    <title>Simple Konva Editor Demo</title>
+    <link rel='stylesheet' , href='/public/css/bootstrap.css'/>
     <style>
+        .clearfix {
+            clear: both;
+        }
+
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #F0F0F0;
+        }
+
+        #layers {
+            float: left;
+            width: 250px;
+            overflow: hidden;
+        }
+
+        #canvas_container {
+            margin-left: 260px;
+            border-left: 1px solid #cccccc;
+        }
+
+        #new_layer_group .buttons {
+            margin-top: 10px;
         }
     </style>
-    <!--<script src="https://cdn.rawgit.com/hammerjs/touchemulator/master/touch-emulator.js"></script>-->
-    <!--<script> TouchEmulator(); </script>-->
-    <!--<script src="https://hammerjs.github.io/dist/hammer.js"></script>-->
-    <!--<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>-->
-    <!--<script src="https://cdn.rawgit.com/julianshapiro/velocity/master/velocity.min.js"></script>-->
 </head>
 <body>
-<div id="container"></div>
+<div id="container" class="clearfix">
+    <div id="layers" class="panel panel-info">
+        <div class="panel-heading">
+            <h3 class="panel-title">Layers</h3>
+        </div>
+        <div class="panel-body">
+            <div id="new_layer_group" class="form-group">
+                <input class="form-control" id="image_path_or_text" type="text" value="Image path or Text ...">
+                <div class="buttons">
+                    <button id="add_new_image" class="btn btn-default">Add Image</button>
+                    <button id="add_new_text" class="btn btn-default">Add Text</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="canvas_container"/>
+</div>
 
 <script>
     var width = window.innerWidth;
@@ -63,15 +93,14 @@
 
         var width = topRight.getX() - topLeft.getX();
         var height = bottomLeft.getY() - topLeft.getY();
-        if(width && height) {
+        if (width && height) {
             image.width(width);
             image.height(height);
+            group.offsetX(width / 2);
+            group.offsetY(height / 2);
+            center.setX(topLeft.getX() + group.offsetX());
+            center.setY(topLeft.getY() + group.offsetY());
         }
-
-        group.offsetX(width/2);
-        group.offsetY(height/2);
-        center.setX(topLeft.getX() + group.offsetX());
-        center.setY(topLeft.getY() + group.offsetY());
     }
 
     function addAnchor(group, x, y, name, opts) {
@@ -92,48 +121,51 @@
 
         var anchor = new Konva.Circle(config);
 
-        anchor.on('dragmove', function() {
+        anchor.on('dragmove', function () {
             update(this);
             layer.draw();
         });
 
-        anchor.on('mousedown touchstart', function() {
+        anchor.on('mousedown touchstart', function () {
             group.setDraggable(false);
-            if(name === 'center') {
+            if (name === 'center') {
                 group.rotating = true;
+                rotatingObj = group;
             }
             this.moveToTop();
         });
 
-        anchor.on('dragend', function() {
+        anchor.on('dragend', function () {
             group.setDraggable(true);
             layer.draw();
         });
 
         // add hover styling
-        anchor.on('mouseover', function() {
+        anchor.on('mouseover', function () {
             var layer = this.getLayer();
             document.body.style.cursor = 'pointer';
             this.setStrokeWidth(4);
             layer.draw();
         });
 
-        anchor.on('mouseout', function() {
+        anchor.on('mouseout', function () {
             var layer = this.getLayer();
             document.body.style.cursor = 'default';
             this.setStrokeWidth(2);
             layer.draw();
         });
 
-        group.on('mouseup', function () {
-           group.setDraggable(true);
+        stage.on('mouseup', function () {
+            group.setDraggable(true);
+            group.rotating = false;
+            rotatingObj = null;
         });
 
         group.add(anchor);
     }
 
     var stage = new Konva.Stage({
-        container: 'container',
+        container: 'canvas_container',
         width: width,
         height: height
     });
@@ -180,62 +212,92 @@
     addAnchor(yodaGroup, 93, 0, 'topRight');
     addAnchor(yodaGroup, 93, 104, 'bottomRight');
     addAnchor(yodaGroup, 0, 104, 'bottomLeft');
-    addAnchor(yodaGroup, 46, 52, 'center', { draggable: false });
+    addAnchor(yodaGroup, 46, 52, 'center', {draggable: false});
 
     var imageObj1 = new Image();
-    imageObj1.onload = function() {
+    imageObj1.onload = function () {
         darthVaderImg.image(imageObj1);
         layer.draw();
     };
-    imageObj1.src = '/assets/darth-vader.jpg';
+    imageObj1.src = '/public/assets/darth-vader.jpg';
 
     var imageObj2 = new Image();
-    imageObj2.onload = function() {
+    imageObj2.onload = function () {
         yodaImg.image(imageObj2);
         layer.draw();
-//        yodaGroup.offsetX(yodaImg.width/2);
-//        yodaGroup.offsetY(yodaImg.height/2);
     };
-    imageObj2.src = '/assets/yoda.jpg';
+    imageObj2.src = '/public/assets/yoda.jpg';
+
+    function newGroup(content, layer) {
+        var group = new Konva.Group({
+            x: 0,
+            y: 0,
+            draggable: true
+        });
+
+        layer.add(group);
+        group.add(content);
+        addAnchor(group, 0, 0, 'topLeft');
+        addAnchor(group, content.width(), 0, 'topRight');
+        addAnchor(group, content.width(), content.height(), 'bottomRight');
+        addAnchor(group, 0, content.height(), 'bottomLeft');
+        addAnchor(group, content.width() / 2, content.height() / 2, 'center', {draggable: false});
+        group.offsetX(content.width()/2);
+        group.offsetY(content.height()/2);
+        group.setX(content.width()/2 + 30);
+        group.setY(content.height()/2 + 30);
+    }
 
     // ----------------------------------------------------------------------------------------------------
     // Rotation
     Konva.angleDeg = false;
-    star = yodaGroup;
+    var rotatingObj = null;
 
-    function animate(layer, star, frame) {
-        if(star.rotating) {
-            star.angularVelocity = (star.getRotation() - star.lastRotation) * 1000 / frame.timeDiff;
+    function animate(layer, rotatingObj, frame) {
+        if (rotatingObj.rotating) {
+            rotatingObj.angularVelocity = (rotatingObj.getRotation() - rotatingObj.lastRotation) * 1000 / frame.timeDiff;
         }
-        star.lastRotation = star.getRotation();
+        rotatingObj.lastRotation = rotatingObj.getRotation();
     }
 
-    // custom properties
-    star.lastRotation = 0;
-    star.rotating = false;
-    layer.add(star);
-
-    stage.on('mouseup', function() {
-        star.rotating = false;
-   });
-
-    stage.on('contentMousemove', function() {
-        if(star.rotating) {
+    stage.on('contentMousemove', function () {
+        if (rotatingObj && rotatingObj.rotating) {
             var mousePos = stage.getPointerPosition();
-            var x = star.getX() - mousePos.x;
-            var y = star.getY() - mousePos.y;
-            star.setRotation(0.5 * Math.PI + Math.atan(y / x));
-            if(mousePos.x <= stage.getWidth() / 2) {
-                star.rotate(Math.PI);
+            var x = rotatingObj.getX() - mousePos.x;
+            var y = rotatingObj.getY() - mousePos.y;
+            rotatingObj.setRotation(0.5 * Math.PI + Math.atan(y / x));
+            if (mousePos.x <= stage.getWidth() / 2) {
+                rotatingObj.rotate(Math.PI);
             }
         }
     });
-    stage.add(layer);
 
-    var anim = new Konva.Animation(function(frame) {
-        animate(layer, star, frame);
-    }, layer);
-    anim.start();
+    function rotate(obj, layer) {
+        obj.lastRotation = 0;
+        obj.rotating = false;
+        var anim = new Konva.Animation(function (frame) {
+            animate(layer, obj, frame);
+        }, layer);
+        anim.start();
+    }
+
+    rotate(yodaGroup, layer);
+    rotate(darthVaderGroup, layer);
+
+    $(document).ready(function () {
+        $('#add_new_image').click(function () {
+            var path = $('#image_path_or_text').val();
+            console.log(path);
+            var imageObj1 = new Image();
+            var image1 = new Konva.Image();
+            imageObj1.onload = function () {
+                image1.image(imageObj1);
+                newGroup(image1, layer);
+                layer.draw();
+            };
+            imageObj1.src = path;
+        });
+    });
 </script>
 
 </body>
