@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.rawgit.com/konvajs/konva/1.5.0/konva.min.js"></script>
+    <meta charset="utf-8">
+    <title>Konva Image Resize Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #F0F0F0;
+        }
+        #container {
+            border: 1px solid green;
+            background-color: lime;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<script>
+    console.clear();
+
+    var history = new Array();
+
+    var imageObj = new Image();
+    var img = null;
+    var offsetX = 0;
+    var offsetY = 0;
+    var degrees = 45;
+
+    stage = new Konva.Stage({
+        container: 'container',
+        width: 600,
+        height: 400
+    });
+    layer = new Konva.Layer();
+    stage.add(layer);
+
+    var rect = new Konva.Rect({
+        x: 50,
+        y: 50,
+        width: 438,
+        height: 300,
+        fill: 'yellow'
+    });
+    layer.add(rect);
+
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+
+
+    var circle = new Konva.Circle({
+        x: 0,
+        y: 0,
+        radius: 40,
+        opacity: 0.7,
+        fill: '#ff5e0a',
+        stroke: '#d95009',
+        strokeWidth: 1,
+        draggable: true
+    });
+    layer.add(circle);
+
+
+    circle.on('dragmove touchmove', function (e) {
+        draw(e.evt.clientX, e.evt.clientY, circle.radius(), img.x(), img.y());
+    });
+
+
+    imageObj.onload = function () {
+        canvas.width = imageObj.width;
+        canvas.height = imageObj.height;
+        context.drawImage(imageObj, 0, 0, imageObj.width, imageObj.height);
+
+        var imgX = 50;
+        var imgY = 50;
+
+        img = new Konva.Image({
+            x: imgX,
+            y: imgY,
+            image: canvas
+        });
+
+        img.setRotation(degrees);
+
+        offsetX = imageObj.width / 2;
+        offsetY = imageObj.height / 2;
+
+        var rotationX = imgX + offsetX;
+        var rotationY = imgY + offsetY;
+
+        img.setOffsetX(offsetX);
+        img.setOffsetY(offsetY);
+        img.x(rotationX);
+        img.y(rotationY);
+
+        context.translate(canvas.width/2, canvas.height/2);
+
+        context.rotate(-degrees * Math.PI/180);
+
+
+        layer.add(img);
+
+        circle.moveToTop();
+        layer.draw();
+    };
+
+    imageObj.crossOrigin = "anonymous";
+    imageObj.src = "assets/yoda.jpg";
+
+    function draw(absX, absY, radius, imageX, imageY) {
+        var x = 0;
+        var y = 0;
+
+        // set pointer
+        circle.x(absX);
+        circle.y(absY);
+
+        // imageX = imageX - (offsetX);
+        // imageY = imageY - (offsetY);
+
+        x = absX - imageX;
+        y = absY - imageY;
+
+        // translate context to center of canvas
+        //  context.translate(canvas.width / 2, canvas.height / 2);
+
+        //   context.rotate(degrees * Math.PI/180);
+
+        context.beginPath();
+        context.arc(x, y, radius, 0, 2 * Math.PI);
+        context.fill();
+
+        layer.draw();
+    }
+</script>
+</body>
+</html>
